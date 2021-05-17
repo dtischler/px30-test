@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# shellcheck disable=SC1091
+. /usr/libexec/os-helpers-fs
+# shellcheck disable=SC1091
+. /usr/libexec/os-helpers-logging
+
+prepare_enabled() {
+    return 0
+}
+
+prepare_run() {
+    # Mount /run here so we can store logs and other data from initramfs
+    if ! mount -t tmpfs -o "nosuid,nodev,strictatime,mode=0755" tmpfs /run; then
+        warn "Couldn't mount /run so initramfs logs will not be persistent."
+    fi
+    mkdir -m 0755 /run/initramfs
+
+    # shellcheck disable=SC2154
+    if [ -z "$bootparam_shell" ] && [ -z "${bootparam_shell_debug}" ]; then
+        # Export stdout and stderr to file
+        exec >/run/initramfs/initramfs.debug 2>&1
+    fi
+}
